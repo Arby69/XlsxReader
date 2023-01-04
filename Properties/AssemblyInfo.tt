@@ -1,0 +1,59 @@
+﻿<#@ template debug="true" hostspecific="true" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ assembly name="EnvDTE" #>
+<#@ import namespace="EnvDTE" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#
+  string csFile = this.Host.ResolvePath("AssemblyInfo.cs");
+  if (File.Exists(csFile))
+  {
+    string output = File.ReadAllText(csFile);
+    Regex pattern = new Regex("AssemblyVersion\\(\"(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<revision>\\d+)\\.(?<build>\\d+)\"\\)");
+    MatchCollection matches = pattern.Matches(output);
+    if (matches.Count == 1)
+    {
+      major = Convert.ToInt32(matches[0].Groups["major"].Value);
+      minor = Convert.ToInt32(matches[0].Groups["minor"].Value);
+      build = Convert.ToInt32(matches[0].Groups["build"].Value) + 1;
+      revision = Convert.ToInt32(matches[0].Groups["revision"].Value);
+
+      string conf = this.Host.ResolveParameterValue("-", "-", "BuildConfiguration");
+      if (string.IsNullOrEmpty(conf))
+      {
+        var serviceProvider = this.Host as IServiceProvider;
+        if(serviceProvider != null) 
+        {
+          var dte = serviceProvider.GetService(typeof(DTE)) as DTE;
+          conf = dte.Solution.SolutionBuild.ActiveConfiguration.Name;
+        }
+      }
+      if (conf is string && conf.Contains("Release"))
+      {
+        revision++;
+      }
+    }
+  }
+#>
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+[assembly: AssemblyTitle("XlsxReader")]
+[assembly: AssemblyDescription("Library for reading XLSX Open Document files")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("")]
+[assembly: AssemblyCopyright("")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+[assembly: ComVisible(false)]
+
+[assembly: AssemblyVersion("<#= this.major #>.<#= this.minor #>.<#= this.revision #>.<#= this.build #>")]
+<#+
+int major = 1;
+int minor = 0;
+int revision = 0;
+int build = 0;
+#>
